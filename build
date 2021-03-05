@@ -30,10 +30,6 @@ case $HOST_OS in
     # Set minimal path.
     PATH=/usr/bin:/bin:/usr/sbin:/sbin
 
-    # Force zig to use system-linker to enable adhoc-codesigning.
-    # This is a requirement for macOS 11.2 arm64.
-    export ZIG_SYSTEM_LINKER_HACK=1
-
     SDK_PATH=`xcrun --show-sdk-path`
     CMAKE_FIND_USE_CMAKE_SYSTEM_PATH=OFF
     CMAKE_INCLUDE_PATH="$SDK_PATH/usr/include"
