@@ -21,14 +21,46 @@ case $TARGET_OS_CMAKE in
   native) TARGET_OS_CMAKE="";;
 esac
 
+CMAKE_EXE=$(which cmake)
+
+# Host-specific behavior.
+HOST_OS=`uname -s`
+case $HOST_OS in
+  Darwin)
+    # Set minimal path.
+    PATH=/usr/bin:/bin:/usr/sbin:/sbin
+
+    # Force zig to use system-linker to enable adhoc-codesigning.
+    # This is a requirement for macOS 11.2 arm64.
+    export ZIG_SYSTEM_LINKER_HACK=1
+
+    SDK_PATH=`xcrun --show-sdk-path`
+    CMAKE_FIND_USE_CMAKE_SYSTEM_PATH=OFF
+    CMAKE_INCLUDE_PATH="$SDK_PATH/usr/include"
+    CMAKE_LIBRARY_PATH="$SDK_PATH/usr/lib"
+    CMAKE_FRAMEWORK_PATH="$SDK_PATH/System/Library/Frameworks"
+    ;;
+  *)
+    SDK_PATH=
+    CMAKE_FIND_USE_CMAKE_SYSTEM_PATH=ON
+    CMAKE_INCLUDE_PATH=
+    CMAKE_LIBRARY_PATH=
+    CMAKE_FRAMEWORK_PATH=
+    ;;
+esac
+
 # First build the libraries for Zig to link against, as well as native `llvm-tblgen`.
 mkdir -p "$ROOTDIR/out/build-llvm-host"
 cd "$ROOTDIR/out/build-llvm-host"
-cmake "$ROOTDIR/llvm" \
+$CMAKE_EXE "$ROOTDIR/llvm" \
   -DLLVM_ENABLE_PROJECTS="lld;clang" \
   -DLLVM_ENABLE_LIBXML2=OFF \
   -DCMAKE_INSTALL_PREFIX="$ROOTDIR/out/host" \
   -DCMAKE_PREFIX_PATH="$ROOTDIR/out/host" \
+  -DCMAKE_FIND_USE_CMAKE_SYSTEM_PATH="$CMAKE_FIND_USE_CMAKE_SYSTEM_PATH" \
+  -DCMAKE_INCLUDE_PATH="$CMAKE_INCLUDE_PATH" \
+  -DCMAKE_LIBRARY_PATH="$CMAKE_LIBRARY_PATH" \
+  -DCMAKE_FRAMEWORK_PATH="$CMAKE_FRAMEWORK_PATH" \
   -DLLVM_INCLUDE_TESTS=OFF \
   -DLLVM_INCLUDE_GO_TESTS=OFF \
   -DLLVM_INCLUDE_EXAMPLES=OFF \
@@ -44,7 +76,7 @@ make "$JOBS" install
 # Clang, LLD we just built from source.
 mkdir -p "$ROOTDIR/out/build-zig-host"
 cd "$ROOTDIR/out/build-zig-host"
-cmake "$ROOTDIR/zig" \
+$CMAKE_EXE "$ROOTDIR/zig" \
   -DCMAKE_INSTALL_PREFIX="$ROOTDIR/out/host" \
   -DCMAKE_PREFIX_PATH="$ROOTDIR/out/host" \
   -DCMAKE_BUILD_TYPE=Release \
@@ -59,7 +91,7 @@ export CXX="$ZIG c++ -fno-sanitize=all -target $TARGET -mcpu=$MCPU"
 # Rebuild LLVM with Zig.
 mkdir -p "$ROOTDIR/out/build-llvm-$TARGET-$MCPU"
 cd "$ROOTDIR/out/build-llvm-$TARGET-$MCPU"
-cmake "$ROOTDIR/llvm" \
+$CMAKE_EXE "$ROOTDIR/llvm" \
   -DLLVM_ENABLE_PROJECTS="lld;clang" \
   -DLLVM_ENABLE_LIBXML2=OFF \
   -DLLVM_ENABLE_TERMINFO=OFF \
@@ -67,6 +99,10 @@ cmake "$ROOTDIR/llvm" \
   -DLLVM_ENABLE_BACKTRACES=OFF \
   -DCMAKE_INSTALL_PREFIX="$ROOTDIR/out/$TARGET-$MCPU" \
   -DCMAKE_PREFIX_PATH="$ROOTDIR/out/$TARGET-$MCPU" \
+  -DCMAKE_FIND_USE_CMAKE_SYSTEM_PATH="$CMAKE_FIND_USE_CMAKE_SYSTEM_PATH" \
+  -DCMAKE_INCLUDE_PATH="$CMAKE_INCLUDE_PATH" \
+  -DCMAKE_LIBRARY_PATH="$CMAKE_LIBRARY_PATH" \
+  -DCMAKE_FRAMEWORK_PATH="$CMAKE_FRAMEWORK_PATH" \
   -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_CROSSCOMPILING=True \
   -DCMAKE_SYSTEM_NAME="$TARGET_OS_CMAKE" \
@@ -100,7 +136,7 @@ make "$JOBS" install-llvm-headers install-clang-headers install-LLVMSupport inst
 # Finally, we can cross compile Zig itself, with Zig.
 mkdir -p "$ROOTDIR/out/build-zig-$TARGET-$MCPU"
 cd "$ROOTDIR/out/build-zig-$TARGET-$MCPU"
-cmake "$ROOTDIR/zig" \
+$CMAKE_EXE "$ROOTDIR/zig" \
   -DCMAKE_INSTALL_PREFIX="$ROOTDIR/out/zig-$TARGET-$MCPU" \
   -DCMAKE_PREFIX_PATH="$ROOTDIR/out/$TARGET-$MCPU" \
   -DCMAKE_CROSSCOMPILING=True \
