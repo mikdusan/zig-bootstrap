@@ -62,15 +62,15 @@ Note: Generally, for Linux targets, we prefer the musl libc builds over the
 glibc builds here, because musl builds end up producing a static binary, which
 is more portable across Linux distributions.
 
-| triple                     | support status |
-|----------------------------|----------------|
+| triple                     | support status | -mcpu parameter |
+|----------------------------|----------------| ----------------|
 | `aarch64_be-linux-gnu`     | not tested     |
 | `aarch64_be-linux-musl`    | not tested     |
 | `aarch64_be-windows-gnu`   | not tested     |
 | `aarch64-linux-gnu`        | OK             |
 | `aarch64-linux-musl`       | OK             |
 | `aarch64-windows-gnu`      | not tested     |
-| `aarch64-macos-gnu`        | [#44](https://github.com/ziglang/zig-bootstrap/issues/44) |
+| `aarch64-macos-gnu`        | OK             | apple_a13+v8_5a |
 | `armeb-linux-gnueabi`      | not tested     |
 | `armeb-linux-gnueabihf`    | not tested     |
 | `armeb-linux-musleabi`     | not tested     |
@@ -111,7 +111,7 @@ is more portable across Linux distributions.
 | `x86_64-linux-gnux32`      | [#20](https://github.com/ziglang/bootstrap/issues/20) |
 | `x86_64-linux-musl`        | OK             |
 | `x86_64-windows-gnu`       | OK             |
-| `x86_64-macos-gnu`         | [#38](https://github.com/ziglang/bootstrap/issues/38) |
+| `x86_64-macos-gnu`         | OK             | core2 |
 
 #### Other Notable Targets Known to Work
 
